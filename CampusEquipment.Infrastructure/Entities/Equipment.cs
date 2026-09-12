@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace CampusEquipment.Core.Entities;
+namespace CampusEquipment.Infrastructure.Entities;
 
 [Index("AssetCode", Name = "UQ_Equipment_AssetCode", IsUnique = true)]
 public partial class Equipment

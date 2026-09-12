@@ -1,32 +1,43 @@
-﻿using CampusEquipment.Core.Models.Database;
+using CampusEquipment.Core.DTOs;
 using CampusEquipment.Core.Repositories;
+using CampusEquipment.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CampusEquipment.Infrastructure.Repositories
+namespace CampusEquipment.Infrastructure.Repositories;
+
+public class DepartmentRepository : IDepartmentRepository
 {
-    public class DepartmentRepository : IDepartmentRepository
+    private readonly AppDbContext _context;
+
+    public DepartmentRepository(AppDbContext context)
     {
-        private readonly CampusEquipmentDbContext _context;
+        _context = context;
+    }
 
-        public DepartmentRepository(CampusEquipmentDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<IEnumerable<DepartmentDto>> GetAll()
+    {
+        return await _context.Departments
+            .AsNoTracking()
+            .Select(d => new DepartmentDto
+            {
+                DepartmentId = d.DepartmentId,
+                Name = d.Name,
+                Description = d.Description
+            })
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<Department>> GetAll()
-        {
-            return await _context.Department.ToListAsync();
-        }
-
-        public async Task<Department?> GetById(int id)
-        {
-            return await _context.Department
-                .FirstOrDefaultAsync(d => d.DepartmentId == id);
-        }
+    public async Task<DepartmentDto?> GetById(int id)
+    {
+        return await _context.Departments
+            .AsNoTracking()
+            .Where(d => d.DepartmentId == id)
+            .Select(d => new DepartmentDto
+            {
+                DepartmentId = d.DepartmentId,
+                Name = d.Name,
+                Description = d.Description
+            })
+            .FirstOrDefaultAsync();
     }
 }

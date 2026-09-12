@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using CampusEquipment.Core.Entities;
+using CampusEquipment.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace CampusEquipment.Core.Data;
+namespace CampusEquipment.Infrastructure.Data;
 
 public partial class AppDbContext : DbContext
 {
@@ -17,12 +15,7 @@ public partial class AppDbContext : DbContext
     }
 
     public virtual DbSet<Department> Departments { get; set; }
-
     public virtual DbSet<Equipment> Equipment { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=STEPHEN\\MSSQLSERVER04;Database=CampusEquipmentDb;Trusted_Connection=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

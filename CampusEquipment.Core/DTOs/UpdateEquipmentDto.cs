@@ -21,7 +21,8 @@ public class UpdateEquipmentDto
 
     public DateOnly? PurchaseDate { get; set; }
 
-    [Required, StringLength(50, MinimumLength = 2)]
+    [Required]
+    [RegularExpression("^(Available|Assigned|UnderMaintenance|Retired)$", ErrorMessage = "Select a valid status.")]
     public string Status { get; set; } = string.Empty;
 
     [Range(1, int.MaxValue, ErrorMessage = "DepartmentId must be greater than 0")]

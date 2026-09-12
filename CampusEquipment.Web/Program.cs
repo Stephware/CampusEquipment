@@ -1,13 +1,19 @@
-using CampusEquipment.Core.Models.Database;
 using CampusEquipment.Core.Repositories;
 using CampusEquipment.Core.Services;
+using CampusEquipment.Infrastructure.Data;
 using CampusEquipment.Infrastructure.Repositories;
 using CampusEquipment.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<CampusEquipmentDbContext>();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
@@ -24,9 +30,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
 app.UseAuthorization();
-
 app.MapStaticAssets();
 
 app.MapControllerRoute(

@@ -15,7 +15,7 @@ public partial class CampusEquipmentDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Department> Departments { get; set; }
+    public virtual DbSet<Department> Department { get; set; }
 
     public virtual DbSet<Equipment> Equipment { get; set; }
 

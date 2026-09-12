@@ -1,6 +1,7 @@
 using CampusEquipment.Core.DTOs;
 using CampusEquipment.Core.Repositories;
 using CampusEquipment.Core.Services;
+using Microsoft.Extensions.Logging;
 
 namespace CampusEquipment.Infrastructure.Services;
 
@@ -8,6 +9,7 @@ public class EquipmentService : IEquipmentService
 {
     private readonly IEquipmentRepository _equipmentRepository;
     private readonly IDepartmentRepository _departmentRepository;
+    private readonly ILogger<EquipmentService> _logger;
 
     private static readonly string[] ValidStatuses =
     {
@@ -19,10 +21,12 @@ public class EquipmentService : IEquipmentService
 
     public EquipmentService(
         IEquipmentRepository equipmentRepository,
-        IDepartmentRepository departmentRepository)
+        IDepartmentRepository departmentRepository,
+        ILogger<EquipmentService> logger)
     {
         _equipmentRepository = equipmentRepository;
         _departmentRepository = departmentRepository;
+        _logger = logger;
     }
 
     public Task<IEnumerable<EquipmentDto>> GetAllEquipment()
@@ -30,9 +34,16 @@ public class EquipmentService : IEquipmentService
         return _equipmentRepository.GetAll();
     }
 
-    public Task<EquipmentDto?> GetEquipmentById(int id)
+    public async Task<EquipmentDto?> GetEquipmentById(int id)
     {
-        return _equipmentRepository.GetById(id);
+        var equipment = await _equipmentRepository.GetById(id);
+
+        if (equipment == null)
+        {
+            _logger.LogWarning("Equipment with id {EquipmentId} was not found.", id);
+        }
+
+        return equipment;
     }
 
     public async Task<IEnumerable<EquipmentDto>> SearchEquipment(
@@ -87,6 +98,7 @@ public class EquipmentService : IEquipmentService
 
         if (equipment.Any(e => e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
         {
+            _logger.LogWarning("Equipment creation failed because asset code {AssetCode} already exists.", assetCode);
             throw new InvalidOperationException("Asset code already exists.");
         }
 
@@ -101,14 +113,20 @@ public class EquipmentService : IEquipmentService
             Status = status,
             DepartmentId = dto.DepartmentId
         });
+
+        _logger.LogInformation("Equipment {AssetCode} was created.", assetCode);
     }
 
     public async Task UpdateEquipment(int id, UpdateEquipmentDto dto)
     {
         ValidateRequiredFields(dto.AssetCode, dto.Name, dto.Category, dto.Status, dto.DepartmentId);
 
-        var equipment = await _equipmentRepository.GetById(id)
-            ?? throw new KeyNotFoundException("Equipment not found.");
+        var equipment = await _equipmentRepository.GetById(id);
+        if (equipment == null)
+        {
+            _logger.LogWarning("Equipment with id {EquipmentId} was not found for update.", id);
+            throw new KeyNotFoundException("Equipment not found.");
+        }
 
         var newStatus = NormalizeAndValidateStatus(dto.Status);
         await ValidateDepartment(dto.DepartmentId);
@@ -120,10 +138,14 @@ public class EquipmentService : IEquipmentService
             e.EquipmentId != id &&
             e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
         {
+            _logger.LogWarning(
+                "Equipment update failed for id {EquipmentId} because asset code {AssetCode} already exists.",
+                id,
+                assetCode);
             throw new InvalidOperationException("Asset code already exists.");
         }
 
-        ValidateAssignmentRule(equipment.Status, newStatus);
+        ValidateAssignmentRule(equipment.Status, newStatus, id);
 
         equipment.AssetCode = assetCode;
         equipment.Name = dto.Name.Trim();
@@ -135,12 +157,17 @@ public class EquipmentService : IEquipmentService
         equipment.DepartmentId = dto.DepartmentId;
 
         await _equipmentRepository.Update(equipment);
+        _logger.LogInformation("Equipment with id {EquipmentId} was updated.", id);
     }
 
     public async Task RetireEquipment(int id)
     {
-        var equipment = await _equipmentRepository.GetById(id)
-            ?? throw new KeyNotFoundException("Equipment not found.");
+        var equipment = await _equipmentRepository.GetById(id);
+        if (equipment == null)
+        {
+            _logger.LogWarning("Equipment with id {EquipmentId} was not found for retirement.", id);
+            throw new KeyNotFoundException("Equipment not found.");
+        }
 
         if (equipment.Status.Equals("Retired", StringComparison.OrdinalIgnoreCase))
         {
@@ -149,6 +176,7 @@ public class EquipmentService : IEquipmentService
 
         equipment.Status = "Retired";
         await _equipmentRepository.Update(equipment);
+        _logger.LogInformation("Equipment with id {EquipmentId} was retired.", id);
     }
 
     private async Task ValidateDepartment(int departmentId)
@@ -156,11 +184,12 @@ public class EquipmentService : IEquipmentService
         var department = await _departmentRepository.GetById(departmentId);
         if (department == null)
         {
+            _logger.LogWarning("Equipment validation failed because department {DepartmentId} does not exist.", departmentId);
             throw new InvalidOperationException("Department does not exist.");
         }
     }
 
-    private static void ValidateAssignmentRule(string currentStatus, string newStatus)
+    private void ValidateAssignmentRule(string currentStatus, string newStatus, int equipmentId)
     {
         if (!newStatus.Equals("Assigned", StringComparison.OrdinalIgnoreCase))
         {
@@ -169,16 +198,18 @@ public class EquipmentService : IEquipmentService
 
         if (currentStatus.Equals("Retired", StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogWarning("Retired equipment with id {EquipmentId} cannot be assigned.", equipmentId);
             throw new InvalidOperationException("Retired equipment cannot be assigned.");
         }
 
         if (currentStatus.Equals("UnderMaintenance", StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogWarning("Equipment under maintenance with id {EquipmentId} cannot be assigned.", equipmentId);
             throw new InvalidOperationException("Equipment under maintenance cannot be assigned.");
         }
     }
 
-    private static void ValidateRequiredFields(
+    private void ValidateRequiredFields(
         string assetCode,
         string name,
         string category,
@@ -191,11 +222,12 @@ public class EquipmentService : IEquipmentService
             string.IsNullOrWhiteSpace(status) ||
             departmentId <= 0)
         {
+            _logger.LogWarning("Equipment validation failed because one or more required fields are invalid.");
             throw new ArgumentException("Required equipment fields are invalid.");
         }
     }
 
-    private static string NormalizeAndValidateStatus(string status)
+    private string NormalizeAndValidateStatus(string status)
     {
         var normalizedStatus = status.Trim();
         var validStatus = ValidStatuses.FirstOrDefault(value =>
@@ -203,6 +235,7 @@ public class EquipmentService : IEquipmentService
 
         if (validStatus == null)
         {
+            _logger.LogWarning("Equipment validation failed because status {Status} is invalid.", normalizedStatus);
             throw new ArgumentException("Status is invalid.");
         }
 

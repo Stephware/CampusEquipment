@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CampusEquipment.Infrastructure.Repositories
 {
-    internal class DepartmentRepository : IDepartmentRepository
+    public class DepartmentRepository : IDepartmentRepository
     {
         private readonly CampusEquipmentDbContext _context;
 

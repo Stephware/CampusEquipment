@@ -9,8 +9,7 @@ namespace CampusEquipment.Core.Services
 {
     public interface IDepartmentService
     {
-        IEnumerable<DepartmentDto> GetAllDepartments();
-
-        DepartmentDto? GetDepartmentById(int id);
+        Task<IEnumerable<DepartmentDto>> GetAllDepartments();
+        Task<DepartmentDto?> GetDepartmentById(int id);
     }
 }

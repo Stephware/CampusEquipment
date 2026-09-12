@@ -6,16 +6,12 @@ public class ApiResponse<T>
 {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public T? Data { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Errors { get; set; }
+    public List<string> Errors { get; set; } = [];
 
     public static ApiResponse<T> SuccessResponse(
         T data,
-        string message = "Request successful")
+        string message = "Request Successful")
     {
         return new ApiResponse<T>
         {
@@ -33,7 +29,21 @@ public class ApiResponse<T>
         {
             Success = false,
             Message = message,
-            Errors = errors
+            Data = default,
+            Errors = errors ?? new List<string>()
+        };
+    }
+}
+
+public class ApiResponse : ApiResponse<object?>
+{
+    public static ApiResponse<object?> SuccessResponse(
+        string message = "Request Successful")
+    {
+        return new ApiResponse<object?>
+        {
+            Success = true,
+            Message = message
         };
     }
 }

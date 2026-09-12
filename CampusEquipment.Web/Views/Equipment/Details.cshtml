@@ -1,160 +1,46 @@
-﻿@model CampusEquipment.Core.DTOs.CreateEquipmentDto
+@model CampusEquipment.Core.DTOs.EquipmentDto
 
 @{
-    ViewData["Title"] = "Create Equipment";
+    ViewData["Title"] = "Equipment Details";
 }
 
-<h1>Create Equipment</h1>
-
-<hr />
-
-<div class="row">
-    <div class="col-md-6">
-
-        <form asp-action="Create" method="post">
-
-            <div asp-validation-summary="ModelOnly"
-                 class="text-danger"></div>
-
-            <div class="form-group mb-3">
-                <label asp-for="AssetCode" class="form-label">
-                    Asset Code
-                </label>
-
-                <input asp-for="AssetCode"
-                       class="form-control"
-                       placeholder="Enter asset code" />
-
-                <span asp-validation-for="AssetCode"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Name" class="form-label">
-                    Equipment Name
-                </label>
-
-                <input asp-for="Name"
-                       class="form-control"
-                       placeholder="Enter equipment name" />
-
-                <span asp-validation-for="Name"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Category" class="form-label">
-                    Category
-                </label>
-
-                <input asp-for="Category"
-                       class="form-control"
-                       placeholder="e.g. Computer, Printer, Projector" />
-
-                <span asp-validation-for="Category"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Brand" class="form-label">
-                    Brand
-                </label>
-
-                <input asp-for="Brand"
-                       class="form-control"
-                       placeholder="Enter brand" />
-
-                <span asp-validation-for="Brand"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Model" class="form-label">
-                    Model
-                </label>
-
-                <input asp-for="Model"
-                       class="form-control"
-                       placeholder="Enter model" />
-
-                <span asp-validation-for="Model"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="PurchaseDate" class="form-label">
-                    Purchase Date
-                </label>
-
-                <input asp-for="PurchaseDate"
-                       type="date"
-                       class="form-control" />
-
-                <span asp-validation-for="PurchaseDate"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Status" class="form-label">
-                    Status
-                </label>
-
-                <select asp-for="Status" class="form-select">
-                    <option value="">-- Select Status --</option>
-                    <option value="Available">Available</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="UnderMaintenance">
-                        Under Maintenance
-                    </option>
-                    <option value="Retired">Retired</option>
-                </select>
-
-                <span asp-validation-for="Status"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="DepartmentId" class="form-label">
-                    Department
-                </label>
-
-                <select asp-for="DepartmentId"
-                        class="form-select">
-
-                    <option value="">-- Select Department --</option>
-
-                    @foreach (var department in ViewBag.Departments)
-                    {
-                        <option value="@department.DepartmentId">
-                            @department.Name
-                        </option>
-                    }
-
-                </select>
-
-                <span asp-validation-for="DepartmentId"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="mt-4">
-                <button type="submit"
-                        class="btn btn-primary">
-                    Create Equipment
-                </button>
-
-                <a asp-action="Index"
-                   class="btn btn-secondary">
-                    Cancel
-                </a>
-            </div>
-
-        </form>
-
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Equipment Details</h1>
+        <p class="text-muted mb-0">View the selected equipment record.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.EquipmentId" class="btn btn-primary">Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
     </div>
 </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Asset Code</dt>
+            <dd class="col-sm-9">@Model.AssetCode</dd>
+
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">Category</dt>
+            <dd class="col-sm-9">@Model.Category</dd>
+
+            <dt class="col-sm-3">Brand</dt>
+            <dd class="col-sm-9">@(Model.Brand ?? "-")</dd>
+
+            <dt class="col-sm-3">Model</dt>
+            <dd class="col-sm-9">@(Model.Model ?? "-")</dd>
+
+            <dt class="col-sm-3">Purchase Date</dt>
+            <dd class="col-sm-9">@(Model.PurchaseDate?.ToString("yyyy-MM-dd") ?? "-")</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+
+            <dt class="col-sm-3">Department</dt>
+            <dd class="col-sm-9">@Model.DepartmentName</dd>
+        </dl>
+    </div>
+</div>

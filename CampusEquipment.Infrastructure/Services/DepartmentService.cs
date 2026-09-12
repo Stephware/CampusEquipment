@@ -20,7 +20,6 @@ namespace CampusEquipment.Infrastructure.Services
             _departmentRepository = departmentRepository;
         }
 
-        // GET ALL DEPARTMENTS
         public async Task<IEnumerable<DepartmentDto>> GetAllDepartments()
         {
             var departments = await _departmentRepository.GetAll();
@@ -28,7 +27,6 @@ namespace CampusEquipment.Infrastructure.Services
             return departments.Select(MapToDto);
         }
 
-        // GET DEPARTMENT BY ID
         public async Task<DepartmentDto?> GetDepartmentById(int id)
         {
             var department = await _departmentRepository.GetById(id);
@@ -39,7 +37,6 @@ namespace CampusEquipment.Infrastructure.Services
             return MapToDto(department);
         }
 
-        // ENTITY → DTO
         private DepartmentDto MapToDto(Department department)
         {
             return new DepartmentDto

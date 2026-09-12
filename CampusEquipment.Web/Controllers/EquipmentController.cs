@@ -43,4 +43,25 @@ public class EquipmentController : Controller
 
         return View(model);
     }
+
+    public async Task<IActionResult> Retire(int id)
+    {
+        var equipment = await _equipmentService.GetEquipmentById(id);
+
+        if (equipment == null)
+        {
+            return NotFound();
+        }
+
+        return View(equipment);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ActionName("Retire")]
+    public async Task<IActionResult> RetireConfirmed(int id)
+    {
+        await _equipmentService.RetireEquipment(id);
+        return RedirectToAction(nameof(Index));
+    }
 }

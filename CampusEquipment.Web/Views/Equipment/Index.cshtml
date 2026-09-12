@@ -1,4 +1,4 @@
-@model IEnumerable<CampusEquipment.Core.DTOs.EquipmentDto>
+@model CampusEquipment.Web.Models.EquipmentIndexViewModel
 
 @{
     ViewData["Title"] = "Equipment";
@@ -8,6 +8,50 @@
     <div>
         <h1 class="h3 mb-1">Equipment</h1>
         <p class="text-muted mb-0">Manage campus equipment and assets.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Asset code, name, or brand" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                <input type="text" name="category" value="@Model.Category" class="form-control" placeholder="Category" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <input type="text" name="status" value="@Model.Status" class="form-control" placeholder="Status" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Department</label>
+                <select name="departmentId" class="form-select">
+                    <option value="">All departments</option>
+                    @foreach (var department in Model.Departments)
+                    {
+                        if (Model.DepartmentId == department.DepartmentId)
+                        {
+                            <option value="@department.DepartmentId" selected>@department.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@department.DepartmentId">@department.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -28,9 +72,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.Any())
+                    @if (Model.Equipment.Any())
                     {
-                        @foreach (var item in Model)
+                        @foreach (var item in Model.Equipment)
                         {
                             <tr>
                                 <td>@item.AssetCode</td>

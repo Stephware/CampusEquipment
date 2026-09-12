@@ -1,50 +1,25 @@
-﻿using CampusEquipment.Core.DTOs;
-using CampusEquipment.Core.Models.Database;
+using CampusEquipment.Core.DTOs;
 using CampusEquipment.Core.Repositories;
 using CampusEquipment.Core.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CampusEquipment.Infrastructure.Services
+namespace CampusEquipment.Infrastructure.Services;
+
+public class DepartmentService : IDepartmentService
 {
-    public class DepartmentService : IDepartmentService
+    private readonly IDepartmentRepository _departmentRepository;
+
+    public DepartmentService(IDepartmentRepository departmentRepository)
     {
-        private readonly IDepartmentRepository _departmentRepository;
+        _departmentRepository = departmentRepository;
+    }
 
-        public DepartmentService(
-            IDepartmentRepository departmentRepository)
-        {
-            _departmentRepository = departmentRepository;
-        }
+    public Task<IEnumerable<DepartmentDto>> GetAllDepartments()
+    {
+        return _departmentRepository.GetAll();
+    }
 
-        public async Task<IEnumerable<DepartmentDto>> GetAllDepartments()
-        {
-            var departments = await _departmentRepository.GetAll();
-
-            return departments.Select(MapToDto);
-        }
-
-        public async Task<DepartmentDto?> GetDepartmentById(int id)
-        {
-            var department = await _departmentRepository.GetById(id);
-
-            if (department == null)
-                return null;
-
-            return MapToDto(department);
-        }
-
-        private DepartmentDto MapToDto(Department department)
-        {
-            return new DepartmentDto
-            {
-                DepartmentId = department.DepartmentId,
-                Name = department.Name,
-                Description = department.Description
-            };
-        }
+    public Task<DepartmentDto?> GetDepartmentById(int id)
+    {
+        return _departmentRepository.GetById(id);
     }
 }

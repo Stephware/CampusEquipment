@@ -1,10 +1,11 @@
 using CampusEquipment.API.Common;
-using CampusEquipment.Core.Models.Database;
 using CampusEquipment.Core.Repositories;
 using CampusEquipment.Core.Services;
+using CampusEquipment.Infrastructure.Data;
 using CampusEquipment.Infrastructure.Repositories;
 using CampusEquipment.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,10 +29,13 @@ builder.Services
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<CampusEquipmentDbContext>();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
@@ -48,9 +52,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

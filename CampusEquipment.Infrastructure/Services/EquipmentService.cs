@@ -1,5 +1,4 @@
 using CampusEquipment.Core.DTOs;
-using CampusEquipment.Core.Models.Database;
 using CampusEquipment.Core.Repositories;
 using CampusEquipment.Core.Services;
 
@@ -26,16 +25,14 @@ public class EquipmentService : IEquipmentService
         _departmentRepository = departmentRepository;
     }
 
-    public async Task<IEnumerable<EquipmentDto>> GetAllEquipment()
+    public Task<IEnumerable<EquipmentDto>> GetAllEquipment()
     {
-        var equipment = await _equipmentRepository.GetAll();
-        return equipment.Select(ToDto).ToList();
+        return _equipmentRepository.GetAll();
     }
 
-    public async Task<EquipmentDto?> GetEquipmentById(int id)
+    public Task<EquipmentDto?> GetEquipmentById(int id)
     {
-        var equipment = await _equipmentRepository.GetById(id);
-        return equipment == null ? null : ToDto(equipment);
+        return _equipmentRepository.GetById(id);
     }
 
     public async Task<IEnumerable<EquipmentDto>> SearchEquipment(
@@ -75,17 +72,12 @@ public class EquipmentService : IEquipmentService
             query = query.Where(e => e.DepartmentId == departmentId.Value);
         }
 
-        return query.Select(ToDto).ToList();
+        return query.ToList();
     }
 
     public async Task CreateEquipment(CreateEquipmentDto dto)
     {
-        ValidateRequiredFields(
-            dto.AssetCode,
-            dto.Name,
-            dto.Category,
-            dto.Status,
-            dto.DepartmentId);
+        ValidateRequiredFields(dto.AssetCode, dto.Name, dto.Category, dto.Status, dto.DepartmentId);
 
         var status = NormalizeAndValidateStatus(dto.Status);
         await ValidateDepartment(dto.DepartmentId);
@@ -93,13 +85,12 @@ public class EquipmentService : IEquipmentService
         var assetCode = dto.AssetCode.Trim();
         var equipment = await _equipmentRepository.GetAll();
 
-        if (equipment.Any(e =>
-            e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
+        if (equipment.Any(e => e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidOperationException("Asset code already exists.");
         }
 
-        var newEquipment = new Equipment
+        await _equipmentRepository.Add(new EquipmentDto
         {
             AssetCode = assetCode,
             Name = dto.Name.Trim(),
@@ -109,19 +100,12 @@ public class EquipmentService : IEquipmentService
             PurchaseDate = dto.PurchaseDate,
             Status = status,
             DepartmentId = dto.DepartmentId
-        };
-
-        await _equipmentRepository.Add(newEquipment);
+        });
     }
 
     public async Task UpdateEquipment(int id, UpdateEquipmentDto dto)
     {
-        ValidateRequiredFields(
-            dto.AssetCode,
-            dto.Name,
-            dto.Category,
-            dto.Status,
-            dto.DepartmentId);
+        ValidateRequiredFields(dto.AssetCode, dto.Name, dto.Category, dto.Status, dto.DepartmentId);
 
         var equipment = await _equipmentRepository.GetById(id)
             ?? throw new KeyNotFoundException("Equipment not found.");
@@ -170,7 +154,6 @@ public class EquipmentService : IEquipmentService
     private async Task ValidateDepartment(int departmentId)
     {
         var department = await _departmentRepository.GetById(departmentId);
-
         if (department == null)
         {
             throw new InvalidOperationException("Department does not exist.");
@@ -215,7 +198,6 @@ public class EquipmentService : IEquipmentService
     private static string NormalizeAndValidateStatus(string status)
     {
         var normalizedStatus = status.Trim();
-
         var validStatus = ValidStatuses.FirstOrDefault(value =>
             value.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
 
@@ -230,22 +212,5 @@ public class EquipmentService : IEquipmentService
     private static string? CleanOptionalText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
-
-    private static EquipmentDto ToDto(Equipment equipment)
-    {
-        return new EquipmentDto
-        {
-            EquipmentId = equipment.EquipmentId,
-            AssetCode = equipment.AssetCode,
-            Name = equipment.Name,
-            Category = equipment.Category,
-            Brand = equipment.Brand,
-            Model = equipment.Model,
-            PurchaseDate = equipment.PurchaseDate,
-            Status = equipment.Status,
-            DepartmentId = equipment.DepartmentId,
-            DepartmentName = equipment.Department?.Name ?? "Unknown"
-        };
     }
 }

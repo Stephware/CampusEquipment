@@ -1,16 +1,9 @@
-﻿using CampusEquipment.Core.Models.Database;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using CampusEquipment.Core.DTOs;
 
-namespace CampusEquipment.Core.Repositories
+namespace CampusEquipment.Core.Repositories;
+
+public interface IDepartmentRepository
 {
-    public interface IDepartmentRepository
-    {
-        Task<IEnumerable<Department>> GetAll();
-
-        Task<Department?> GetById(int id);
-    }
+    Task<IEnumerable<DepartmentDto>> GetAll();
+    Task<DepartmentDto?> GetById(int id);
 }

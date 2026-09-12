@@ -26,6 +26,10 @@ builder.Services
         };
     });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<CampusEquipmentDbContext>();
 
@@ -39,6 +43,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

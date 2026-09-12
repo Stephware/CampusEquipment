@@ -10,6 +10,14 @@ public class EquipmentService : IEquipmentService
     private readonly IEquipmentRepository _equipmentRepository;
     private readonly IDepartmentRepository _departmentRepository;
 
+    private static readonly string[] ValidStatuses =
+    {
+        "Available",
+        "Assigned",
+        "UnderMaintenance",
+        "Retired"
+    };
+
     public EquipmentService(
         IEquipmentRepository equipmentRepository,
         IDepartmentRepository departmentRepository)
@@ -50,14 +58,16 @@ public class EquipmentService : IEquipmentService
 
         if (!string.IsNullOrWhiteSpace(category))
         {
+            var categoryFilter = category.Trim();
             query = query.Where(e =>
-                e.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+                e.Category.Equals(categoryFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         if (!string.IsNullOrWhiteSpace(status))
         {
+            var statusFilter = status.Trim();
             query = query.Where(e =>
-                e.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                e.Status.Equals(statusFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         if (departmentId.HasValue)
@@ -77,24 +87,27 @@ public class EquipmentService : IEquipmentService
             dto.Status,
             dto.DepartmentId);
 
+        var status = NormalizeAndValidateStatus(dto.Status);
         await ValidateDepartment(dto.DepartmentId);
 
+        var assetCode = dto.AssetCode.Trim();
         var equipment = await _equipmentRepository.GetAll();
+
         if (equipment.Any(e =>
-            e.AssetCode.Equals(dto.AssetCode, StringComparison.OrdinalIgnoreCase)))
+            e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidOperationException("Asset code already exists.");
         }
 
         var newEquipment = new Equipment
         {
-            AssetCode = dto.AssetCode,
-            Name = dto.Name,
-            Category = dto.Category,
-            Brand = dto.Brand,
-            Model = dto.Model,
+            AssetCode = assetCode,
+            Name = dto.Name.Trim(),
+            Category = dto.Category.Trim(),
+            Brand = CleanOptionalText(dto.Brand),
+            Model = CleanOptionalText(dto.Model),
             PurchaseDate = dto.PurchaseDate,
-            Status = dto.Status,
+            Status = status,
             DepartmentId = dto.DepartmentId
         };
 
@@ -113,31 +126,28 @@ public class EquipmentService : IEquipmentService
         var equipment = await _equipmentRepository.GetById(id)
             ?? throw new KeyNotFoundException("Equipment not found.");
 
+        var newStatus = NormalizeAndValidateStatus(dto.Status);
         await ValidateDepartment(dto.DepartmentId);
 
+        var assetCode = dto.AssetCode.Trim();
         var allEquipment = await _equipmentRepository.GetAll();
+
         if (allEquipment.Any(e =>
             e.EquipmentId != id &&
-            e.AssetCode.Equals(dto.AssetCode, StringComparison.OrdinalIgnoreCase)))
+            e.AssetCode.Equals(assetCode, StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidOperationException("Asset code already exists.");
         }
 
-        if ((equipment.Status.Equals("Retired", StringComparison.OrdinalIgnoreCase) ||
-             equipment.Status.Equals("UnderMaintenance", StringComparison.OrdinalIgnoreCase)) &&
-            dto.Status.Equals("Assigned", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                "Retired or under maintenance equipment cannot be assigned.");
-        }
+        ValidateAssignmentRule(equipment.Status, newStatus);
 
-        equipment.AssetCode = dto.AssetCode;
-        equipment.Name = dto.Name;
-        equipment.Category = dto.Category;
-        equipment.Brand = dto.Brand;
-        equipment.Model = dto.Model;
+        equipment.AssetCode = assetCode;
+        equipment.Name = dto.Name.Trim();
+        equipment.Category = dto.Category.Trim();
+        equipment.Brand = CleanOptionalText(dto.Brand);
+        equipment.Model = CleanOptionalText(dto.Model);
         equipment.PurchaseDate = dto.PurchaseDate;
-        equipment.Status = dto.Status;
+        equipment.Status = newStatus;
         equipment.DepartmentId = dto.DepartmentId;
 
         await _equipmentRepository.Update(equipment);
@@ -148,6 +158,11 @@ public class EquipmentService : IEquipmentService
         var equipment = await _equipmentRepository.GetById(id)
             ?? throw new KeyNotFoundException("Equipment not found.");
 
+        if (equipment.Status.Equals("Retired", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         equipment.Status = "Retired";
         await _equipmentRepository.Update(equipment);
     }
@@ -155,9 +170,28 @@ public class EquipmentService : IEquipmentService
     private async Task ValidateDepartment(int departmentId)
     {
         var department = await _departmentRepository.GetById(departmentId);
+
         if (department == null)
         {
             throw new InvalidOperationException("Department does not exist.");
+        }
+    }
+
+    private static void ValidateAssignmentRule(string currentStatus, string newStatus)
+    {
+        if (!newStatus.Equals("Assigned", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (currentStatus.Equals("Retired", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Retired equipment cannot be assigned.");
+        }
+
+        if (currentStatus.Equals("UnderMaintenance", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Equipment under maintenance cannot be assigned.");
         }
     }
 
@@ -176,6 +210,26 @@ public class EquipmentService : IEquipmentService
         {
             throw new ArgumentException("Required equipment fields are invalid.");
         }
+    }
+
+    private static string NormalizeAndValidateStatus(string status)
+    {
+        var normalizedStatus = status.Trim();
+
+        var validStatus = ValidStatuses.FirstOrDefault(value =>
+            value.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase));
+
+        if (validStatus == null)
+        {
+            throw new ArgumentException("Status is invalid.");
+        }
+
+        return validStatus;
+    }
+
+    private static string? CleanOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static EquipmentDto ToDto(Equipment equipment)
